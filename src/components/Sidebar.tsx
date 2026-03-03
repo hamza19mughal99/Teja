@@ -1,21 +1,35 @@
 import React from 'react';
-import { Home, Search, Briefcase, User, LogOut, MessageSquare } from 'lucide-react';
+import { Home, Search, Briefcase, User, LogOut, MessageSquare, CheckCircle } from 'lucide-react';
 import { Screen } from '../App';
 import logo from 'figma:asset/8af2fca4d3cdaf52b9aca58ebe326adf7f046152.png';
 
 interface SidebarProps {
   currentScreen: Screen;
   onNavigate: (screen: Screen) => void;
+  user?: any; // Accepting passed user object
 }
 
-export default function Sidebar({ currentScreen, onNavigate }: SidebarProps) {
+export default function Sidebar({ currentScreen, onNavigate, user }: SidebarProps) {
+  const handleLogout = () => {
+    localStorage.removeItem('teja-token');
+    localStorage.removeItem('teja-details');
+    window.location.href = '/';
+  };
+  const isAdmin = user?.role?.name?.toLowerCase() === 'admin' || user?.role?.type?.toLowerCase() === 'admin' || user?.role === 'admin';
+
   const navItems = [
     { id: 'dashboard' as Screen, icon: Home, label: 'Dashboard' },
-    { id: 'discovery' as Screen, icon: Search, label: 'Discover' },
     { id: 'my-skills' as Screen, icon: Briefcase, label: 'My Skills' },
-    { id: 'messages' as Screen, icon: MessageSquare, label: 'Messages' },
     { id: 'profile' as Screen, icon: User, label: 'Profile' },
+    { id: 'messages' as Screen, icon: MessageSquare, label: 'Messages' },
+    { id: 'discovery' as Screen, icon: Search, label: 'Discover' },
   ];
+
+  if (isAdmin) {
+    navItems.splice(2, 0, { id: 'users' as Screen, icon: User, label: 'Users' });
+    navItems.splice(3, 0, { id: 'category' as Screen, icon: Briefcase, label: 'Category' });
+    navItems.splice(4, 0, { id: 'skills-approval' as Screen, icon: CheckCircle, label: 'Skills Approval' });
+  }
 
   return (
     <>
@@ -37,16 +51,15 @@ export default function Sidebar({ currentScreen, onNavigate }: SidebarProps) {
           {navItems.map((item) => {
             const isActive = currentScreen === item.id;
             const Icon = item.icon;
-            
+
             return (
               <button
                 key={item.id}
                 onClick={() => onNavigate(item.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                  isActive
-                    ? 'bg-[#2563eb] text-white shadow-md'
-                    : 'text-gray-600 hover:bg-gray-100'
-                }`}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${isActive
+                  ? 'bg-[#2563eb] text-white shadow-md'
+                  : 'text-gray-600 hover:bg-gray-100'
+                  }`}
               >
                 <Icon className="w-5 h-5" strokeWidth={isActive ? 2.5 : 2} />
                 <span className="font-medium">{item.label}</span>
@@ -59,14 +72,14 @@ export default function Sidebar({ currentScreen, onNavigate }: SidebarProps) {
         <div className="p-4 border-t border-gray-200">
           <div className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-100 cursor-pointer">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#2563eb] to-[#1d4ed8] flex items-center justify-center text-white">
-              JD
+              {user?.username ? user.username.substring(0, 2).toUpperCase() : 'U'}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-gray-900 text-sm">John Doe</p>
-              <p className="text-xs text-gray-500 truncate">john@example.com</p>
+              <p className="font-semibold text-gray-900 text-sm truncate">{user?.username || 'User'}</p>
+              <p className="text-xs text-gray-500 truncate">{user?.email || ''}</p>
             </div>
           </div>
-          <button className="w-full mt-2 flex items-center gap-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-100 transition-colors">
+          <button onClick={handleLogout} className="w-full mt-2 flex items-center gap-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-100 transition-colors">
             <LogOut className="w-5 h-5" />
             <span className="font-medium">Logout</span>
           </button>
@@ -79,15 +92,15 @@ export default function Sidebar({ currentScreen, onNavigate }: SidebarProps) {
           {navItems.map((item) => {
             const isActive = currentScreen === item.id;
             const Icon = item.icon;
-            
+
             return (
               <button
                 key={item.id}
                 onClick={() => onNavigate(item.id)}
                 className="flex flex-col items-center gap-1 py-2 px-3 rounded-lg transition-colors hover:bg-gray-100"
               >
-                <Icon 
-                  className={`w-6 h-6 ${isActive ? 'text-[#2563eb]' : 'text-gray-400'}`} 
+                <Icon
+                  className={`w-6 h-6 ${isActive ? 'text-[#2563eb]' : 'text-gray-400'}`}
                   strokeWidth={isActive ? 2.5 : 2}
                 />
                 <span className={`text-xs ${isActive ? 'text-[#2563eb]' : 'text-gray-500'}`}>

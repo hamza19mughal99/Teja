@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import LoginScreen from './components/LoginScreen';
+import RegisterScreen from './components/RegisterScreen';
+import ForgotPasswordScreen from './components/ForgotPasswordScreen';
+import ResetPasswordScreen from './components/ResetPasswordScreen';
 import DashboardScreen from './components/DashboardScreen';
 import DiscoveryScreen from './components/DiscoveryScreen';
 import SkillDetailScreen from './components/SkillDetailScreen';
@@ -10,8 +13,15 @@ import ProfileScreen from './components/ProfileScreen';
 import MessagesScreen from './components/MessagesScreen';
 import NotificationsScreen from './components/NotificationsScreen';
 import Sidebar from './components/Sidebar';
+import StaticPageScreen from './components/StaticPageScreen';
+import UsersScreen from './components/UsersScreen';
+import CategoryScreen from './components/CategoryScreen';
+import SkillsApprovalScreen from './components/SkillsApprovalScreen';
+import { Provider } from "react-redux";
+import { store } from './store';
+import axios from "axios";
 
-export type Screen = 'login' | 'dashboard' | 'discovery' | 'skill-detail' | 'booking' | 'success' | 'my-skills' | 'profile' | 'messages' | 'notifications';
+export type Screen = 'login' | 'register' | 'forgot-password' | 'reset-password' | 'dashboard' | 'discovery' | 'skill-detail' | 'booking' | 'success' | 'my-skills' | 'profile' | 'messages' | 'notifications' | 'privacy' | 'terms' | 'about' | 'users' | 'category' | 'skills-approval';
 
 export interface SkillData {
   id: string;
@@ -34,9 +44,18 @@ export interface SkillData {
 }
 
 function App() {
-  const [currentScreen, setCurrentScreen] = useState<Screen>('login');
+  const [currentScreen, setCurrentScreen] = useState<Screen>(
+    localStorage.getItem('teja-token') ? 'dashboard' : 'login'
+  );
   const [selectedSkill, setSelectedSkill] = useState<SkillData | null>(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [navData, setNavData] = useState<any>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('teja-token'));
+
+  // Get user details
+  const userDetailsStr = localStorage.getItem('teja-details');
+  const user = userDetailsStr ? JSON.parse(userDetailsStr) : null;
+
+  axios.defaults.baseURL = 'https://loved-talent-fb87ca2a9f.strapiapp.com/api';
 
   // Update document title
   React.useEffect(() => {
@@ -48,61 +67,101 @@ function App() {
     setCurrentScreen('dashboard');
   };
 
-  const handleNavigate = (screen: Screen, skill?: SkillData) => {
-    if (skill) {
-      setSelectedSkill(skill);
+  const handleNavigate = (screen: Screen, data?: any) => {
+    if (data && (screen === 'skill-detail' || screen === 'booking' || screen === 'success')) {
+      setSelectedSkill(data);
+    } else {
+      setNavData(data);
     }
     setCurrentScreen(screen);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Desktop/Tablet - Main Layout */}
-      {isLoggedIn ? (
-        <div className="flex h-screen">
-          {/* Sidebar Navigation (Desktop) */}
-          <Sidebar currentScreen={currentScreen} onNavigate={handleNavigate} />
-          
-          {/* Main Content Area */}
-          <main className="flex-1 overflow-hidden">
-            {currentScreen === 'dashboard' && (
-              <DashboardScreen onNavigate={handleNavigate} />
-            )}
-            {currentScreen === 'discovery' && (
-              <DiscoveryScreen onNavigate={handleNavigate} onSelectSkill={(skill) => handleNavigate('skill-detail', skill)} />
-            )}
-            {currentScreen === 'my-skills' && (
-              <MySkillsScreen onNavigate={handleNavigate} />
-            )}
-            {currentScreen === 'profile' && (
-              <ProfileScreen onNavigate={handleNavigate} />
-            )}
-            {currentScreen === 'messages' && (
-              <MessagesScreen onNavigate={handleNavigate} />
-            )}
-            {currentScreen === 'notifications' && (
-              <NotificationsScreen onNavigate={handleNavigate} />
-            )}
-            {currentScreen === 'skill-detail' && selectedSkill && (
-              <SkillDetailScreen skill={selectedSkill} onNavigate={handleNavigate} />
-            )}
-            {currentScreen === 'booking' && selectedSkill && (
-              <BookingRequestScreen skill={selectedSkill} onNavigate={handleNavigate} />
-            )}
-            {currentScreen === 'success' && selectedSkill && (
-              <RequestSuccessScreen skill={selectedSkill} onNavigate={handleNavigate} />
-            )}
-          </main>
-        </div>
-      ) : (
-        /* Login Screen - Centered */
-        <div className="flex items-center justify-center min-h-screen p-4">
-          <div className="w-full max-w-md">
-            <LoginScreen onLogin={handleLogin} />
+    <Provider store={store}>
+      <div className="min-h-screen bg-gray-50">
+        {/* Desktop/Tablet - Main Layout */}
+        {isLoggedIn ? (
+          <div className="flex h-screen">
+            {/* Sidebar Navigation (Desktop) */}
+            <Sidebar currentScreen={currentScreen} onNavigate={handleNavigate} user={user} />
+
+            {/* Main Content Area */}
+            <main className="flex-1 overflow-hidden">
+              {currentScreen === 'dashboard' && (
+                <DashboardScreen onNavigate={handleNavigate} user={user} />
+              )}
+              {currentScreen === 'my-skills' && (
+                <MySkillsScreen onNavigate={handleNavigate} initialData={navData} />
+              )}
+              {currentScreen === 'profile' && (
+                <ProfileScreen onNavigate={handleNavigate} />
+              )}
+              {currentScreen === 'messages' && (
+                <MessagesScreen onNavigate={handleNavigate} />
+              )}
+              {currentScreen === 'notifications' && (
+                <NotificationsScreen onNavigate={handleNavigate} />
+              )}
+              {currentScreen === 'users' && (
+                <UsersScreen onNavigate={handleNavigate} />
+              )}
+              {currentScreen === 'discovery' && (
+                <DiscoveryScreen onNavigate={handleNavigate} onSelectSkill={(skill) => handleNavigate('skill-detail', skill)} />
+              )}
+              {currentScreen === 'category' && (
+                <CategoryScreen onNavigate={handleNavigate} />
+              )}
+              {currentScreen === 'skills-approval' && (
+                <SkillsApprovalScreen onNavigate={handleNavigate} />
+              )}
+              {currentScreen === 'skill-detail' && selectedSkill && (
+                <SkillDetailScreen skill={selectedSkill} onNavigate={handleNavigate} />
+              )}
+              {currentScreen === 'booking' && selectedSkill && (
+                <BookingRequestScreen skill={selectedSkill} onNavigate={handleNavigate} />
+              )}
+              {currentScreen === 'success' && selectedSkill && (
+                <RequestSuccessScreen skill={selectedSkill} onNavigate={handleNavigate} />
+              )}
+            </main>
           </div>
-        </div>
-      )}
-    </div>
+        ) : (
+          /* Auth Screens & Static Pages */
+          <>
+            {['privacy', 'about', 'terms'].includes(currentScreen) ? (
+              <>
+                {currentScreen === 'privacy' && (
+                  <StaticPageScreen pageType="privacy" onNavigate={(s) => handleNavigate(s as Screen)} />
+                )}
+                {currentScreen === 'about' && (
+                  <StaticPageScreen pageType="about" onNavigate={(s) => handleNavigate(s as Screen)} />
+                )}
+                {currentScreen === 'terms' && (
+                  <StaticPageScreen pageType="terms" onNavigate={(s) => handleNavigate(s as Screen)} />
+                )}
+              </>
+            ) : (
+              <div className="flex items-center justify-center min-h-screen p-4">
+                <div className="w-full max-w-md">
+                  {currentScreen === 'login' && (
+                    <LoginScreen onLogin={handleLogin} onNavigate={(s) => handleNavigate(s)} />
+                  )}
+                  {currentScreen === 'register' && (
+                    <RegisterScreen onRegister={handleLogin} onNavigate={(s) => handleNavigate(s)} />
+                  )}
+                  {currentScreen === 'forgot-password' && (
+                    <ForgotPasswordScreen onNavigate={(s) => handleNavigate(s)} />
+                  )}
+                  {currentScreen === 'reset-password' && (
+                    <ResetPasswordScreen onLogin={handleLogin} onNavigate={(s) => handleNavigate(s)} />
+                  )}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </Provider>
   );
 }
 

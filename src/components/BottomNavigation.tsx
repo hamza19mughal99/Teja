@@ -10,8 +10,8 @@ interface BottomNavigationProps {
 export default function BottomNavigation({ activeScreen, onNavigate }: BottomNavigationProps) {
   const navItems = [
     { id: 'dashboard' as Screen, icon: Home, label: 'Home' },
-    { id: 'discovery' as Screen, icon: Search, label: 'Search' },
     { id: 'my-skills' as Screen, icon: Briefcase, label: 'Skills' },
+    { id: 'discovery' as Screen, icon: Search, label: 'Search' },
     { id: 'messages' as Screen, icon: MessageSquare, label: 'Messages' },
     { id: 'profile' as Screen, icon: User, label: 'Profile' },
   ];
@@ -22,15 +22,15 @@ export default function BottomNavigation({ activeScreen, onNavigate }: BottomNav
         {navItems.map((item) => {
           const isActive = activeScreen === item.id;
           const Icon = item.icon;
-          
+
           return (
             <button
               key={item.id}
               onClick={() => onNavigate(item.id)}
               className="flex flex-col items-center gap-1 py-2 px-3 rounded-lg transition-colors hover:bg-gray-100"
             >
-              <Icon 
-                className={`w-6 h-6 ${isActive ? 'text-[#2563eb]' : 'text-gray-400'}`} 
+              <Icon
+                className={`w-6 h-6 ${isActive ? 'text-[#2563eb]' : 'text-gray-400'}`}
                 strokeWidth={isActive ? 2.5 : 2}
               />
               <span className={`text-xs ${isActive ? 'text-[#2563eb]' : 'text-gray-500'}`}>

@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
-import { Bell, Search, ArrowRight, Heart, Code, Palette, Camera, Music, ChevronLeft, ChevronRight, UserPlus, MoreVertical } from 'lucide-react';
+import { Bell, Search, ArrowRight, Heart, Code, Palette, Camera, Music, ChevronLeft, ChevronRight, UserPlus, MoreVertical, Plus } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
+import AddSkillForm from './AddSkillForm';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import BottomNavigation from './BottomNavigation';
 import { Screen } from '../App';
 
 interface DashboardScreenProps {
-  onNavigate: (screen: Screen) => void;
+  onNavigate: (screen: Screen, data?: any) => void;
+  user?: any;
 }
 
 interface SkillProgress {
@@ -45,8 +48,9 @@ interface TopProvider {
   online: boolean;
 }
 
-export default function DashboardScreen({ onNavigate }: DashboardScreenProps) {
+export default function DashboardScreen({ onNavigate, user }: DashboardScreenProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [isAddSkillOpen, setIsAddSkillOpen] = useState(false);
 
   const skillProgress: SkillProgress[] = [
     { id: '1', title: 'UI/UX Design', watched: 2, total: 8, icon: <Palette className="w-5 h-5" />, color: 'from-purple-400 to-pink-400' },
@@ -127,7 +131,7 @@ export default function DashboardScreen({ onNavigate }: DashboardScreenProps) {
             />
           </div>
           <div className="flex items-center gap-3">
-            <button 
+            <button
               onClick={() => onNavigate('notifications')}
               className="w-11 h-11 flex items-center justify-center bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors relative"
             >
@@ -139,9 +143,9 @@ export default function DashboardScreen({ onNavigate }: DashboardScreenProps) {
             </button>
             <div className="hidden lg:flex items-center gap-2 pl-3 border-l border-gray-200">
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#2563eb] to-[#1d4ed8] flex items-center justify-center text-white text-sm font-semibold">
-                JR
+                {user?.username ? user.username.substring(0, 2).toUpperCase() : 'U'}
               </div>
-              <span className="font-semibold text-gray-900">Jason Ranti</span>
+              <span className="font-semibold text-gray-900 truncate max-w-[120px]">{user?.username || 'User'}</span>
             </div>
           </div>
         </div>
@@ -286,6 +290,14 @@ export default function DashboardScreen({ onNavigate }: DashboardScreenProps) {
 
             {/* Right Sidebar */}
             <div className="space-y-6">
+              <Button
+                className="w-full bg-[#2563eb] hover:bg-[#1d4ed8] text-white rounded-2xl h-12 lg:h-14 font-semibold shadow-[0_4px_14px_0_rgba(37,99,235,0.39)] hover:shadow-[0_6px_20px_rgba(37,99,235,0.23)] hover:-translate-y-0.5 transition-all text-base lg:text-lg"
+                onClick={() => onNavigate('my-skills', { openAddModal: true })}
+              >
+                <Plus className="w-5 h-5 lg:w-6 lg:h-6 mr-2" />
+                Add your skills
+              </Button>
+
               {/* Statistics Card */}
               <div className="bg-white rounded-2xl p-6 border border-gray-200">
                 <div className="flex items-center justify-between mb-4">
@@ -298,8 +310,8 @@ export default function DashboardScreen({ onNavigate }: DashboardScreenProps) {
                 {/* Avatar with Badge */}
                 <div className="flex justify-center mb-4">
                   <div className="relative">
-                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#2563eb] to-[#1d4ed8] flex items-center justify-center text-white text-2xl font-bold border-4 border-white shadow-lg">
-                      JR
+                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#2563eb] to-[#1d4ed8] flex items-center justify-center text-white text-2xl font-bold border-4 border-white shadow-lg uppercase">
+                      {user?.username ? user.username.substring(0, 2) : 'U'}
                     </div>
                     <div className="absolute -top-1 -right-1 bg-[#2563eb] text-white text-xs font-bold px-2 py-1 rounded-full">
                       90%
@@ -308,7 +320,7 @@ export default function DashboardScreen({ onNavigate }: DashboardScreenProps) {
                 </div>
 
                 <div className="text-center mb-6">
-                  <h4 className="text-lg font-bold text-gray-900 mb-1">Good Morning Jason 🔥</h4>
+                  <h4 className="text-lg font-bold text-gray-900 mb-1">Good Morning {user?.username || 'User'} 🔥</h4>
                   <p className="text-xs text-gray-500">Continue your learning to achieve your target!</p>
                 </div>
 
@@ -318,7 +330,7 @@ export default function DashboardScreen({ onNavigate }: DashboardScreenProps) {
                     {weeklyStats.map((stat, index) => (
                       <div key={index} className="flex-1 flex flex-col items-center gap-2">
                         <div className="w-full bg-gray-100 rounded-lg overflow-hidden flex items-end" style={{ height: '100%' }}>
-                          <div 
+                          <div
                             className={`w-full rounded-t-lg transition-all ${index === 3 ? 'bg-[#2563eb]' : 'bg-gray-300'}`}
                             style={{ height: `${(stat.value / maxValue) * 100}%` }}
                           ></div>
