@@ -138,9 +138,9 @@ export default function DashboardScreen({ onNavigate, user }: DashboardScreenPro
               <Bell className="w-5 h-5 text-gray-600" />
               <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
             </button>
-            <button className="w-11 h-11 flex items-center justify-center bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors">
+            {/* <button className="w-11 h-11 flex items-center justify-center bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors">
               <MoreVertical className="w-5 h-5 text-gray-600" />
-            </button>
+            </button> */}
             <div className="hidden lg:flex items-center gap-2 pl-3 border-l border-gray-200">
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#2563eb] to-[#1d4ed8] flex items-center justify-center text-white text-sm font-semibold">
                 {user?.username ? user.username.substring(0, 2).toUpperCase() : 'U'}
@@ -164,8 +164,9 @@ export default function DashboardScreen({ onNavigate, user }: DashboardScreenPro
                   <h1 className="text-3xl lg:text-4xl font-bold text-white mb-6 leading-tight">
                     Sharpen Your Skills with<br />Professional Skill Exchange
                   </h1>
-                  <button className="inline-flex items-center gap-2 px-6 py-3 bg-gray-900 hover:bg-gray-800 text-white rounded-full font-semibold transition-all shadow-lg">
-                    Join Now
+                  <button className="inline-flex items-center gap-2 px-6 py-3 bg-gray-900 hover:bg-gray-800 text-white rounded-full font-semibold transition-all shadow-lg"
+                    onClick={() => onNavigate('my-skills', { openAddModal: true })}>
+                    Add your skills
                     <ArrowRight className="w-5 h-5" />
                   </button>
                 </div>
@@ -177,7 +178,7 @@ export default function DashboardScreen({ onNavigate, user }: DashboardScreenPro
               </div>
 
               {/* Progress Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {skillProgress.map((skill) => (
                   <div key={skill.id} className="bg-white rounded-2xl p-5 border border-gray-200 hover:shadow-md transition-shadow">
                     <div className="flex items-start justify-between mb-3">
@@ -192,10 +193,10 @@ export default function DashboardScreen({ onNavigate, user }: DashboardScreenPro
                     <p className="font-semibold text-gray-900">{skill.title}</p>
                   </div>
                 ))}
-              </div>
+              </div> */}
 
               {/* Continue Exploring */}
-              <div>
+              {/* <div>
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-xl font-bold text-gray-900">Continue Exploring</h2>
                   <div className="flex items-center gap-2">
@@ -237,74 +238,29 @@ export default function DashboardScreen({ onNavigate, user }: DashboardScreenPro
                     </div>
                   ))}
                 </div>
-              </div>
+              </div> */}
 
               {/* Your Requests */}
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-bold text-gray-900">Your Requests</h2>
-                  <button className="text-sm font-semibold text-[#2563eb] hover:text-[#1d4ed8]">
-                    See all
-                  </button>
-                </div>
 
-                <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-                  {/* Table Header */}
-                  <div className="grid grid-cols-12 gap-4 px-6 py-3 bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    <div className="col-span-3">Mentor</div>
-                    <div className="col-span-3">Type</div>
-                    <div className="col-span-4">Description</div>
-                    <div className="col-span-2">Action</div>
-                  </div>
-
-                  {/* Table Rows */}
-                  {skillRequests.map((request) => (
-                    <div key={request.id} className="grid grid-cols-12 gap-4 px-6 py-4 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors">
-                      <div className="col-span-3 flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#2563eb] to-[#1d4ed8] flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
-                          {request.mentorAvatar}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium text-gray-900">{request.mentor}</p>
-                          <p className="text-xs text-gray-500">{request.date}</p>
-                        </div>
-                      </div>
-                      <div className="col-span-3 flex items-center">
-                        <Badge className="text-purple-600 bg-purple-50 text-xs font-semibold">
-                          {request.type}
-                        </Badge>
-                      </div>
-                      <div className="col-span-4 flex items-center">
-                        <p className="text-sm text-gray-700">{request.description}</p>
-                      </div>
-                      <div className="col-span-2 flex items-center">
-                        <button className="w-8 h-8 flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-full transition-colors">
-                          <ArrowRight className="w-4 h-4 text-gray-600" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
             </div>
 
             {/* Right Sidebar */}
             <div className="space-y-6">
-              <Button
+              {/* <Button
                 className="w-full bg-[#2563eb] hover:bg-[#1d4ed8] text-white rounded-2xl h-12 lg:h-14 font-semibold shadow-[0_4px_14px_0_rgba(37,99,235,0.39)] hover:shadow-[0_6px_20px_rgba(37,99,235,0.23)] hover:-translate-y-0.5 transition-all text-base lg:text-lg"
-                onClick={() => onNavigate('my-skills', { openAddModal: true })}
+                
               >
                 <Plus className="w-5 h-5 lg:w-6 lg:h-6 mr-2" />
                 Add your skills
-              </Button>
+              </Button> */}
 
               {/* Statistics Card */}
               <div className="bg-white rounded-2xl p-6 border border-gray-200">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-bold text-gray-900">Statistic</h3>
-                  <button className="text-gray-400 hover:text-gray-600">
+                  {/* <button className="text-gray-400 hover:text-gray-600">
                     <MoreVertical className="w-5 h-5" />
-                  </button>
+                  </button> */}
                 </div>
 
                 {/* Avatar with Badge */}
@@ -344,7 +300,7 @@ export default function DashboardScreen({ onNavigate, user }: DashboardScreenPro
               </div>
 
               {/* Your Mentor */}
-              <div className="bg-white rounded-2xl p-6 border border-gray-200">
+              {/* <div className="bg-white rounded-2xl p-6 border border-gray-200">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-bold text-gray-900">Top Providers</h3>
                   <button className="w-8 h-8 flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-full transition-colors">
@@ -378,7 +334,7 @@ export default function DashboardScreen({ onNavigate, user }: DashboardScreenPro
                 <button className="w-full mt-4 py-2 text-sm font-semibold text-[#2563eb] hover:text-[#1d4ed8] border-t border-gray-100 pt-4">
                   See All
                 </button>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>

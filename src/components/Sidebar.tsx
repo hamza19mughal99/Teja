@@ -17,18 +17,19 @@ export default function Sidebar({ currentScreen, onNavigate, user }: SidebarProp
   };
   const isAdmin = user?.role?.name?.toLowerCase() === 'admin' || user?.role?.type?.toLowerCase() === 'admin' || user?.role === 'admin';
 
-  const navItems = [
+  let navItems = [
     { id: 'dashboard' as Screen, icon: Home, label: 'Dashboard' },
     { id: 'my-skills' as Screen, icon: Briefcase, label: 'My Skills' },
     { id: 'profile' as Screen, icon: User, label: 'Profile' },
-    { id: 'messages' as Screen, icon: MessageSquare, label: 'Messages' },
-    { id: 'discovery' as Screen, icon: Search, label: 'Discover' },
+    // { id: 'messages' as Screen, icon: MessageSquare, label: 'Messages' },
   ];
 
   if (isAdmin) {
     navItems.splice(2, 0, { id: 'users' as Screen, icon: User, label: 'Users' });
     navItems.splice(3, 0, { id: 'category' as Screen, icon: Briefcase, label: 'Category' });
     navItems.splice(4, 0, { id: 'skills-approval' as Screen, icon: CheckCircle, label: 'Skills Approval' });
+  } else {
+    navItems.push({ id: 'discovery' as Screen, icon: Search, label: 'Discover' });
   }
 
   return (
