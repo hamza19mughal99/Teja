@@ -51,6 +51,10 @@ function App() {
   const [navData, setNavData] = useState<any>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('teja-token'));
 
+  const queryParams = new URLSearchParams(window.location.search);
+  const token = queryParams.get('code');
+  console.log(token);
+
   // Get user details
   const userDetailsStr = localStorage.getItem('teja-details');
   const user = userDetailsStr ? JSON.parse(userDetailsStr) : null;
@@ -143,16 +147,16 @@ function App() {
             ) : (
               <div className="flex items-center justify-center min-h-screen p-4">
                 <div className="w-full max-w-md">
-                  {currentScreen === 'login' && (
+                  {!token && currentScreen === 'login' && (
                     <LoginScreen onLogin={handleLogin} onNavigate={(s) => handleNavigate(s)} />
                   )}
-                  {currentScreen === 'register' && (
+                  {!token && currentScreen === 'register' && (
                     <RegisterScreen onRegister={handleLogin} onNavigate={(s) => handleNavigate(s)} />
                   )}
-                  {currentScreen === 'forgot-password' && (
+                  {!token && currentScreen === 'forgot-password' && (
                     <ForgotPasswordScreen onNavigate={(s) => handleNavigate(s)} />
                   )}
-                  {currentScreen === 'reset-password' && (
+                  {token && (
                     <ResetPasswordScreen onLogin={handleLogin} onNavigate={(s) => handleNavigate(s)} />
                   )}
                 </div>

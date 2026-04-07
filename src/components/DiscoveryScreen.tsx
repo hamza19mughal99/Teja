@@ -30,18 +30,17 @@ export default function DiscoveryScreen({ onNavigate, onSelectSkill }: Discovery
       setLoading(true);
       const res = await apiService.getAllSkills();
       if (res?.data) {
-        // Filter out current user's skills and only show approved ones
-        const otherSkills = res.data.filter((s: any) => s.user?.id !== user?.id && s.approval_status === 'approved');
+        console.log(res.data)
+        const otherSkills = res.data.filter((s: any) => s.approval_status === 'approved');
 
-        // Extract unique categories
         const cats = new Set<string>();
         cats.add('All');
-        otherSkills.forEach((s: any) => {
+        res?.data.forEach((s: any) => {
           if (s.category?.name) cats.add(s.category.name);
         });
         setCategories(Array.from(cats));
 
-        setSkills(otherSkills);
+        setSkills(res?.data);
       }
     } catch (err) {
       console.error("Failed to fetch skills:", err);
@@ -214,8 +213,8 @@ function SkillCardGrid({
       className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer group flex flex-col h-full hover:-translate-y-1"
       onClick={onClick}
     >
-      <div className="relative h-48 overflow-hidden bg-gray-100 flex-shrink-0">
-        <img src={getImageSrc(skill)} alt={skill.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+      <div className="relative w-full aspect-video overflow-hidden bg-gray-100 flex-shrink-0">
+        <img src={getImageSrc(skill)} alt={skill.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" style={{ height: "250px" }} />
         <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2 py-1.5 rounded-full flex items-center gap-1 shadow-[0_2px_8px_rgba(0,0,0,0.08)]">
           <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-500" />
           <span className="text-xs font-bold text-gray-900">{skill.rating_sum || 'New'}</span>
@@ -268,6 +267,7 @@ function SkillCardList({
           <img
             src={getImageSrc(skill)}
             alt={skill.title}
+            style={{ height: "250px" }}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
         </div>

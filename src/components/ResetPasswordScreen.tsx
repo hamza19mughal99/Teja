@@ -11,14 +11,20 @@ interface ResetPasswordScreenProps {
 }
 
 export default function ResetPasswordScreen({ onNavigate, onLogin }: ResetPasswordScreenProps) {
+
+    const queryParams = new URLSearchParams(window.location.search);
+    const token = queryParams.get('code');
+
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-    const [code, setCode] = useState('');
+    const [code, setCode] = useState(token || '');
     const [password, setPassword] = useState('');
     const [passwordConfirmation, setPasswordConfirmation] = useState('');
 
     const dispatch = useDispatch<AppDispatch>();
     const { loading, error, successMessage } = useSelector((state: RootState) => state.auth);
+
+
 
     useEffect(() => {
         dispatch(clearError());
