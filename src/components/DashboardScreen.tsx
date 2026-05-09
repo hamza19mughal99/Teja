@@ -121,15 +121,15 @@ export default function DashboardScreen({ onNavigate, user: initialUser }: Dashb
             {/* Left Column */}
             <div className="lg:col-span-2 space-y-8">
               {/* Hero Banner */}
-              <div className="relative overflow-hidden bg-gradient-to-br from-[#1e293b] via-[#334155] to-[#475569] rounded-3xl p-8 lg:p-10 shadow-xl border border-white/10">
+              <div className="relative overflow-hidden bg-white rounded-3xl p-8 lg:p-10 shadow-sm border border-gray-200">
                 <div className="relative z-10">
-                  <Badge className="bg-blue-500/20 text-blue-200 border-blue-400/30 mb-4 px-3 py-1">
+                  <Badge className="bg-blue-50 text-blue-700 border-blue-100 mb-4 px-3 py-1">
                     {isAdmin ? 'SYSTEM ADMINISTRATOR' : 'LEARNER DASHBOARD'}
                   </Badge>
-                  <h1 className="text-3xl lg:text-4xl font-bold text-black mb-6 leading-tight">
+                  <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-6 leading-tight">
                     {isAdmin ? 'Teja Admin Console' : `Ready to learn something new,\n${profile?.username || 'User'}?`}
                   </h1>
-                  <p className="text-slate-300 mb-8 max-w-md">
+                  <p className="text-gray-600 mb-8 max-w-md">
                     {isAdmin
                       ? 'Welcome to the main control center. From here you can manage users, approve skills, and oversee all platform activity.'
                       : 'Explore new skills or manage your ongoing exchanges.'
@@ -150,14 +150,14 @@ export default function DashboardScreen({ onNavigate, user: initialUser }: Dashb
                   ) : (
                     <div className="flex flex-wrap gap-3">
                       <button
-                        className="inline-flex items-center gap-2 px-6 py-3 bg-white text-blue-600 hover:bg-gray-50 rounded-full font-semibold transition-all shadow-md"
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-white text-blue-600 hover:bg-gray-50 rounded-full font-semibold transition-all shadow-md border border-gray-100"
                         onClick={() => onNavigate('discovery')}
                       >
                         Explore Skills
                         <ArrowRight className="w-4 h-4" />
                       </button>
                       <button
-                        className="inline-flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 text-white backdrop-blur-md rounded-full font-semibold transition-all border border-white/20"
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-blue-600 hover:bg-blue-700 rounded-full font-semibold transition-all shadow-md"
                         onClick={() => onNavigate('my-skills', { openAddModal: true })}
                       >
                         <Plus className="w-4 h-4" />
@@ -168,7 +168,7 @@ export default function DashboardScreen({ onNavigate, user: initialUser }: Dashb
                 </div>
                 {/* Decorative Pattern */}
                 <div className="absolute right-0 bottom-0 p-8 opacity-10 hidden sm:block">
-                  {isAdmin ? <ShieldCheck className="w-48 h-48 text-white rotate-12" /> : <BookOpen className="w-48 h-48 text-white rotate-12" />}
+                  {isAdmin ? <ShieldCheck className="w-48 h-48 text-blue-500 rotate-12" /> : <BookOpen className="w-48 h-48 text-blue-500 rotate-12" />}
                 </div>
               </div>
 
