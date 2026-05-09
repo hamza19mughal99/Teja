@@ -24,7 +24,7 @@ export default function RequestSuccessScreen({ skill, onNavigate }: RequestSucce
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-3">Request Sent!</h1>
           <p className="text-gray-600 mb-6">
-            We've notified <span className="font-semibold text-gray-900">{skill.provider.name}</span>.
+            We've notified <span className="font-semibold text-gray-900">{skill.user?.username || skill.provider?.name || 'the provider'}</span>.
             You'll hear back soon.
           </p>
 
@@ -38,11 +38,11 @@ export default function RequestSuccessScreen({ skill, onNavigate }: RequestSucce
               </div>
               <div className="flex justify-between">
                 <span>Provider:</span>
-                <span className="font-medium text-gray-900">{skill.provider.name}</span>
+                <span className="font-medium text-gray-900">{skill.user?.username || skill.provider?.name || 'Unknown'}</span>
               </div>
               <div className="flex justify-between">
                 <span>Duration:</span>
-                <span className="font-medium text-gray-900">{skill.creditHours} hour</span>
+                <span className="font-medium text-gray-900">{skill.credit_hours || skill.creditHours || 1} hour</span>
               </div>
               <div className="flex justify-between">
                 <span>Status:</span>

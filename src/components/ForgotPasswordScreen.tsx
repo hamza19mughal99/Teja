@@ -85,12 +85,12 @@ export default function ForgotPasswordScreen({ onNavigate }: ForgotPasswordScree
                     </form>
 
                     <div className="mt-8 text-center flex flex-col gap-4">
-                        <button
+                        {/* <button
                             onClick={() => onNavigate('reset-password')}
                             className="text-sm text-blue-600 hover:text-blue-800 transition-colors font-semibold"
                         >
                             Already have a code? Reset password
-                        </button>
+                        </button> */}
 
                         <button
                             onClick={() => onNavigate('login')}

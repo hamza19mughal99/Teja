@@ -1,35 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Camera,
   MapPin,
   Mail,
-  Phone,
-  Globe,
   Calendar,
-  Award,
   Star,
   Edit2,
   Save,
   X,
   CheckCircle,
-  Settings,
-  Bell,
   Lock,
-  HelpCircle,
-  LogOut,
-  Shield,
-  CreditCard
+  Flag,
+  Loader2,
+  Briefcase,
+  History,
+  TrendingUp,
+  Shield
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Switch } from './ui/switch';
 import BottomNavigation from './BottomNavigation';
 import { Screen } from '../App';
 import { useDispatch, useSelector } from 'react-redux';
 import { updateUserDetails, uploadUserProfileImage, changeUserPassword } from '../store/slices/AuthSlice';
 import { AppDispatch, RootState } from '../store';
+import { apiService } from '../services/apiService';
+import { toast } from 'sonner';
 
 interface ProfileScreenProps {
   onNavigate: (screen: Screen) => void;
@@ -38,64 +36,48 @@ interface ProfileScreenProps {
 export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [fetchingData, setFetchingData] = useState(true);
 
   const dispatch = useDispatch<AppDispatch>();
-  const { user, loading } = useSelector((state: RootState) => state.auth);
+  const { user, loading: authLoading } = useSelector((state: RootState) => state.auth);
+  const isAdmin = user?.role?.name?.toLowerCase() === 'admin' || user?.role?.type?.toLowerCase() === 'admin' || user?.role === 'admin';
+
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      if (isAdmin) {
+        setFetchingData(false);
+        return;
+      }
+      try {
+        setFetchingData(true);
+        const res = await apiService.getUserDashboard();
+        if (res?.data) {
+          setDashboardData(res.data);
+        }
+      } catch (err: any) {
+        toast.error(err || "Failed to load profile statistics");
+      } finally {
+        setFetchingData(false);
+      }
+    };
+    fetchProfileData();
+  }, [isAdmin]);
 
   const getAvatarUrl = () => {
     if (!user?.profile_image?.url) {
-      return `https://ui-avatars.com/api/?name=${user?.username || 'U'}&background=2563eb&color=fff`;
+      return `https://ui-avatars.com/api/?name=${user?.username || 'U'}&background=2563eb&color=fff&size=128`;
     }
     const url = user.profile_image.url;
     return url.startsWith('http') ? url : `https://loved-talent-fb87ca2a9f.strapiapp.com${url}`;
   };
 
-  const profileData = {
-    name: user?.username || 'User',
-    username: `@${user?.username || 'user'}`,
-    email: user?.email || '',
-    phone: '',
-    location: user?.location || 'Not set',
-    website: '',
-    joinDate: user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : '',
-    bio: user?.bio || '',
-    avatar: getAvatarUrl(),
-  };
-
-  const reviewsAsReviewee = user?.reviews_as_reviewed_user || [];
-
-  const stats = {
-    totalExchanges: user?.skill_availabilities?.length || 0,
-    skillsOffered: user?.skill_availabilities?.length || 0,
-    rating: reviewsAsReviewee.length ? (reviewsAsReviewee.reduce((acc: number, curr: any) => acc + curr.rating, 0) / reviewsAsReviewee.length).toFixed(1) : 0,
-    totalReviews: reviewsAsReviewee.length,
-    badges: 0,
-    hoursExchanged: 0,
-  };
-
-  const reviews = reviewsAsReviewee.map((r: any) => ({
-    id: r.id.toString(),
-    author: 'User',
-    authorAvatar: 'U',
-    skillExchanged: r.booking?.message || 'Skill Exchange',
-    rating: r.rating,
-    date: new Date(r.createdAt).toLocaleDateString(),
-    comment: r.comment,
-  }));
-
-  const badges = [
-    { id: '1', name: 'Early Adopter', icon: '🌟', description: 'Joined in the first month' },
-    { id: '2', name: 'Top Contributor', icon: '🏆', description: 'Completed 50+ exchanges' }
-  ];
-
-  const renderStars = (rating: number) => {
-    return Array.from({ length: 5 }).map((_, i) => (
-      <Star
-        key={i}
-        className={`w-4 h-4 ${i < rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
-          }`}
-      />
-    ));
+  const profile = dashboardData?.profile || user;
+  const stats = dashboardData?.stats || {
+    offeredSkills: 0,
+    sentRequests: 0,
+    receivedRequests: 0,
+    totalBookings: 0
   };
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -104,259 +86,182 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
     const file = event.target.files?.[0];
     if (file && user?.id) {
       await dispatch(uploadUserProfileImage({ id: user.id, file }));
+      toast.success("Profile image updated");
     }
   };
 
+  if (fetchingData && !dashboardData) {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-gray-50 h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
   return (
-    <div className="h-full bg-gray-50 overflow-y-auto w-full mt-2">
+    <div className="h-full bg-gray-50 overflow-y-auto w-full mt-8">
+      {/* Top Bar Spacer (Consistent with Dashboard) */}
+      <div className="hidden lg:block h-20 w-full bg-white border-b border-gray-200"></div>
+
       <div className="min-h-full pb-20 lg:pb-8">
-        {/* Header Banner */}
-        <div className="relative h-48 lg:h-64 bg-gradient-to-br from-[#2563eb] to-[#1d4ed8] overflow-hidden shadow-sm">
+        {/* Header Banner - Increased height to prevent cutoff */}
+        <div className="relative h-56 lg:h-72 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 overflow-hidden shadow-sm">
           <div className="absolute inset-0 bg-black/10"></div>
+          {/* Decorative shapes */}
+          <div className="absolute -top-24 -right-24 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
+          <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-blue-400/20 rounded-full blur-3xl"></div>
         </div>
 
-        {/* Profile Content */}
-        <div className="max-w-6xl w-full mx-auto px-4 lg:px-8  relative z-10 mb-8">
-          {/* Profile Header */}
-          <div className="flex flex-col lg:flex-row lg:items-end gap-6 mb-8">
-            {/* Avatar */}
-            <div className="relative shrink-0">
-              <div className="w-32 h-32 lg:w-40 lg:h-40 rounded-3xl border-4 border-white shadow-xl overflow-hidden bg-white">
-                <img
-                  src={profileData.avatar}
-                  alt={profileData.name}
-                  className="w-full h-full object-cover"
-                  referrerPolicy="no-referrer"
-                  crossOrigin="anonymous"
-                />
-              </div>
-              <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
-              <button
-                style={{
-                  top: "130px",
-                  right: "0",
-                  border: "2px solid #fff",
-                  backgroundColor: "cornflowerblue",
-                  cursor: "pointer",
-                }}
-                onClick={() => fileInputRef.current?.click()}
-                disabled={loading}
-                className="absolute -bottom-5 -right-5 w-12 h-12 bg-[#2563eb] rounded-full flex items-center justify-center shadow-lg hover:bg-[#1d4ed8] transition-all z-20"
-              >
-                <Camera className="w-5 h-5 text-white" />
-              </button>
-            </div>
-
-            {/* Info */}
-            <div className="flex-1 lg:mb-4">
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                <div className="w-full bg-white/90 backdrop-blur-sm p-4 rounded-2xl shadow-sm border border-gray-100 lg:bg-transparent lg:shadow-none lg:border-none lg:p-0 lg:backdrop-blur-none">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 drop-shadow-sm lg:drop-shadow-none">{profileData.name}</h1>
+        {/* Profile Content - Reduced negative margin */}
+        <div className="max-w-5xl w-full mx-auto px-4 lg:px-8 relative z-10 -mt-24 lg:-mt-32">
+          <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden mb-8">
+            <div className="p-6 lg:p-10">
+              <div className="flex flex-col lg:flex-row gap-8 items-start lg:items-center">
+                {/* Avatar with Upload */}
+                <div className="relative shrink-0 mx-auto lg:mx-0">
+                  <div className="w-32 h-32 lg:w-40 lg:h-40 rounded-3xl border-4 border-white shadow-lg overflow-hidden bg-white ring-1 ring-gray-100">
+                    <img
+                      src={getAvatarUrl()}
+                      alt={profile?.username}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
-                  <p className="text-gray-500 mb-2 font-medium">{profileData.username}</p>
-                  <p className="text-gray-700 max-w-2xl leading-relaxed">{profileData.bio || 'No bio available'}</p>
+                  <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={authLoading}
+                    className="absolute -bottom-3 -right-3 w-10 h-10 bg-[#2563eb] text-white rounded-full flex items-center justify-center shadow-lg hover:bg-[#1d4ed8] transition-all border-2 border-white"
+                  >
+                    <Camera className="w-5 h-5" />
+                  </button>
                 </div>
-                <Button
-                  onClick={() => setIsEditing(!isEditing)}
-                  variant={isEditing ? 'outline' : 'default'}
-                  className={`h-11 px-6 whitespace-nowrap rounded-xl shadow-sm ${!isEditing && 'bg-[#2563eb] hover:bg-[#1d4ed8]'}`}
-                >
-                  {isEditing ? (
-                    <>
-                      <X className="w-4 h-4 mr-2" />
-                      Cancel Editing
-                    </>
-                  ) : (
-                    <>
-                      <Edit2 className="w-4 h-4 mr-2" />
-                      Edit Profile
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-10">
-            <div className="p-5 bg-white rounded-2xl border border-blue-100 shadow-sm text-center relative overflow-hidden group hover:border-blue-200 transition-colors">
-              <div className="absolute inset-0 bg-blue-50/50 group-hover:bg-blue-50 transition-colors"></div>
-              <div className="relative z-10">
-                <p className="text-2xl font-bold text-[#2563eb]">{stats.totalExchanges}</p>
-                <p className="text-xs font-medium text-blue-600/70 mt-1 uppercase tracking-wider">Exchanges</p>
-              </div>
-            </div>
-            <div className="p-5 bg-white rounded-2xl border border-purple-100 shadow-sm text-center relative overflow-hidden group hover:border-purple-200 transition-colors">
-              <div className="absolute inset-0 bg-purple-50/50 group-hover:bg-purple-50 transition-colors"></div>
-              <div className="relative z-10">
-                <p className="text-2xl font-bold text-purple-600">{stats.skillsOffered}</p>
-                <p className="text-xs font-medium text-purple-600/70 mt-1 uppercase tracking-wider">Skills</p>
-              </div>
-            </div>
-            <div className="p-5 bg-white rounded-2xl border border-yellow-100 shadow-sm text-center relative overflow-hidden group hover:border-yellow-200 transition-colors">
-              <div className="absolute inset-0 bg-yellow-50/50 group-hover:bg-yellow-50 transition-colors"></div>
-              <div className="relative z-10">
-                <p className="text-2xl font-bold text-yellow-600">{stats.rating}</p>
-                <p className="text-xs font-medium text-yellow-600/70 mt-1 uppercase tracking-wider">Rating</p>
-              </div>
-            </div>
-            <div className="p-5 bg-white rounded-2xl border border-green-100 shadow-sm text-center relative overflow-hidden group hover:border-green-200 transition-colors">
-              <div className="absolute inset-0 bg-green-50/50 group-hover:bg-green-50 transition-colors"></div>
-              <div className="relative z-10">
-                <p className="text-2xl font-bold text-green-600">{stats.totalReviews}</p>
-                <p className="text-xs font-medium text-green-600/70 mt-1 uppercase tracking-wider">Reviews</p>
-              </div>
-            </div>
-            <div className="p-5 bg-white rounded-2xl border border-red-100 shadow-sm text-center relative overflow-hidden group hover:border-red-200 transition-colors">
-              <div className="absolute inset-0 bg-red-50/50 group-hover:bg-red-50 transition-colors"></div>
-              <div className="relative z-10">
-                <p className="text-2xl font-bold text-red-600">{stats.badges}</p>
-                <p className="text-xs font-medium text-red-600/70 mt-1 uppercase tracking-wider">Badges</p>
-              </div>
-            </div>
-            <div className="p-5 bg-white rounded-2xl border border-cyan-100 shadow-sm text-center relative overflow-hidden group hover:border-cyan-200 transition-colors">
-              <div className="absolute inset-0 bg-cyan-50/50 group-hover:bg-cyan-50 transition-colors"></div>
-              <div className="relative z-10">
-                <p className="text-2xl font-bold text-cyan-600">{stats.hoursExchanged}</p>
-                <p className="text-xs font-medium text-cyan-600/70 mt-1 uppercase tracking-wider">Hours</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Tabs */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="w-full justify-start border-b border-gray-200 rounded-none h-auto p-0 bg-transparent mb-8 flex overflow-x-auto no-scrollbar">
-              <TabsTrigger
-                value="overview"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#2563eb] data-[state=active]:text-[#2563eb] font-medium text-gray-500 data-[state=active]:bg-transparent px-6 py-4 transition-colors shrink-0"
-              >
-                Overview
-              </TabsTrigger>
-              <TabsTrigger
-                value="reviews"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#2563eb] data-[state=active]:text-[#2563eb] font-medium text-gray-500 data-[state=active]:bg-transparent px-6 py-4 transition-colors shrink-0"
-              >
-                Reviews
-              </TabsTrigger>
-              <TabsTrigger
-                value="badges"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#2563eb] data-[state=active]:text-[#2563eb] font-medium text-gray-500 data-[state=active]:bg-transparent px-6 py-4 transition-colors shrink-0"
-              >
-                Badges
-              </TabsTrigger>
-              <TabsTrigger
-                value="settings"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#2563eb] data-[state=active]:text-[#2563eb] font-medium text-gray-500 data-[state=active]:bg-transparent px-6 py-4 transition-colors shrink-0"
-              >
-                Settings
-              </TabsTrigger>
-            </TabsList>
-
-            {/* Overview Tab */}
-            <TabsContent value="overview" className="space-y-6 focus:outline-none focus:ring-0">
-              {isEditing ? (
-                <EditProfileForm profileData={profileData} onSave={() => setIsEditing(false)} dispatch={dispatch} userId={user?.id} loading={loading} />
-              ) : (
-                <div className="space-y-6">
-                  <div className="p-8 bg-white shadow-sm border border-gray-100 rounded-2xl">
-                    <h3 className="font-semibold text-gray-900 mb-6 flex items-center gap-2 text-lg">
-                      <Mail className="w-5 h-5 text-[#2563eb]" />
-                      Contact Information
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="flex items-center gap-4 text-gray-600 bg-gray-50 p-4 rounded-xl">
-                        <Mail className="w-5 h-5 text-[#2563eb]" />
-                        <span className="font-medium">{profileData.email}</span>
-                      </div>
-                      <div className="flex items-center gap-4 text-gray-600 bg-gray-50 p-4 rounded-xl">
-                        <MapPin className="w-5 h-5 text-[#2563eb]" />
-                        <span className="font-medium">{profileData.location}</span>
-                      </div>
-                      <div className="flex items-center gap-4 text-gray-600 bg-gray-50 p-4 rounded-xl">
-                        <Calendar className="w-5 h-5 text-[#2563eb]" />
-                        <span className="font-medium">Joined {profileData.joinDate}</span>
-                      </div>
+                {/* Basic Info */}
+                <div className="flex-1 text-center lg:text-left space-y-2">
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    <div>
+                      <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">{profile?.username || 'User'}</h1>
+                      <p className="text-blue-600 font-medium">@{profile?.username || 'user'}</p>
                     </div>
+                    <Button
+                      onClick={() => setIsEditing(!isEditing)}
+                      variant={isEditing ? 'outline' : 'default'}
+                      className="rounded-xl px-6 h-11"
+                    >
+                      {isEditing ? <><X className="w-4 h-4 mr-2" /> Cancel</> : <><Edit2 className="w-4 h-4 mr-2" /> Edit Profile</>}
+                    </Button>
+                  </div>
+                  <p className="text-left px-2 text-gray-600 max-w-2xl text-sm lg:text-base leading-relaxed">
+                    {profile?.bio || 'No bio provided. Tell the community about your expertise and what you want to learn!'}
+                  </p>
+                  <div className="flex flex-wrap text-left px-2 lg:justify-start gap-4 pt-2">
+                    <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                      <MapPin className="w-3.5 h-3.5 text-blue-500" />
+                      {profile?.location || 'Location not set'}
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                      <Calendar className="w-3.5 h-3.5 text-blue-500" />
+                      Joined {profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'N/A'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Stats Banner */}
+              {!isAdmin && (
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-10 pt-10 border-t border-gray-100">
+                  <div className="text-center p-4 rounded-2xl bg-gray-50 border border-gray-100">
+                    <p className="text-2xl font-bold text-gray-900">{stats.totalBookings}</p>
+                    <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider">Total Exchanges</p>
+                  </div>
+                  <div className="text-center p-4 rounded-2xl bg-blue-50 border border-blue-100">
+                    <p className="text-2xl font-bold text-blue-600">{stats.offeredSkills}</p>
+                    <p className="text-xs text-blue-600/70 font-semibold uppercase tracking-wider">Skills Offered</p>
+                  </div>
+                  <div className="text-center p-4 rounded-2xl bg-purple-50 border border-purple-100">
+                    <p className="text-2xl font-bold text-purple-600">{stats.sentRequests}</p>
+                    <p className="text-xs text-purple-600/70 font-semibold uppercase tracking-wider">Requests Sent</p>
+                  </div>
+                  <div className="text-center p-4 rounded-2xl bg-green-50 border border-green-100">
+                    <p className="text-2xl font-bold text-green-600">{stats.receivedRequests}</p>
+                    <p className="text-xs text-green-600/70 font-semibold uppercase tracking-wider">Requests Recv</p>
                   </div>
                 </div>
               )}
-            </TabsContent>
+            </div>
+          </div>
 
-            {/* Reviews Tab */}
-            <TabsContent value="reviews" className="space-y-6 focus:outline-none focus:ring-0">
-              <div className="flex items-center justify-between p-6 bg-white border border-gray-100 rounded-2xl shadow-sm">
-                <div>
-                  <h3 className="font-semibold text-gray-900 text-lg">Reviews Received</h3>
-                  <p className="text-sm text-gray-500 mt-1">What others say about {profileData.name.split(' ')[0]}</p>
-                </div>
-                <div className="flex items-center gap-3 bg-gray-50 px-4 py-2 rounded-xl border border-gray-100">
-                  <div className="flex">
-                    {renderStars(5)}
-                  </div>
-                  <span className="font-bold text-gray-900 text-lg">{stats.rating}</span>
-                  <span className="text-sm text-gray-500 font-medium">({stats.totalReviews})</span>
-                </div>
-              </div>
+          {/* Profile Tabs */}
+          <div className="bg-white rounded-3xl shadow-lg border border-gray-100 overflow-hidden min-h-[400px]">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="w-full justify-start border-b border-gray-100 rounded-none h-auto p-0 bg-gray-50/50 flex">
+                <TabsTrigger
+                  value="overview"
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 px-8 py-4 font-bold text-gray-500"
+                >
+                  Overview
+                </TabsTrigger>
+                <TabsTrigger
+                  value="settings"
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 px-8 py-4 font-bold text-gray-500"
+                >
+                  Settings
+                </TabsTrigger>
+              </TabsList>
 
-              <div className="space-y-4">
-                {reviews.length > 0 ? reviews.map((review: any) => (
-                  <div key={review.id} className="p-6 bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-                    <div className="flex items-start gap-5">
-                      <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white text-lg font-bold flex-shrink-0 shadow-sm border-2 border-white ring-2 ring-gray-100">
-                        {review.authorAvatar}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-2">
-                          <div>
-                            <p className="font-bold text-gray-900">{review.author}</p>
-                            <p className="text-sm text-[#2563eb] font-medium">{review.skillExchanged}</p>
+              <div className="p-6 lg:p-10">
+                <TabsContent value="overview" className="mt-0">
+                  {isEditing ? (
+                    <EditProfileForm profileData={profile} onSave={() => setIsEditing(false)} dispatch={dispatch} userId={user?.id} loading={authLoading} />
+                  ) : (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                      {!isAdmin && (
+                        <div className="space-y-6">
+                          <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                            <TrendingUp className="w-5 h-5 text-blue-600" />
+                            Activity Insights
+                          </h3>
+                          <div className="space-y-4">
+                            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <Briefcase className="w-5 h-5 text-gray-400" />
+                                <span className="text-sm font-medium text-gray-700">Skills teaching</span>
+                              </div>
+                              <span className="font-bold text-gray-900">{stats.offeredSkills}</span>
+                            </div>
+                            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <History className="w-5 h-5 text-gray-400" />
+                                <span className="text-sm font-medium text-gray-700">Completion rate</span>
+                              </div>
+                              <span className="font-bold text-gray-900">100%</span>
+                            </div>
                           </div>
-                          <span className="text-xs font-semibold text-gray-400 bg-gray-100 px-3 py-1 rounded-full">{review.date}</span>
                         </div>
-                        <div className="flex gap-1 mb-3">
-                          {renderStars(review.rating)}
+                      )}
+                      <div className="space-y-6">
+                        <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                          <Mail className="w-5 h-5 text-blue-600" />
+                          Contact
+                        </h3>
+                        <div className="p-6 bg-blue-50/50 rounded-2xl border border-blue-100/50">
+                          <p className="text-sm text-gray-500 mb-1 font-semibold uppercase tracking-wide">Registered Email</p>
+                          <p className="font-bold text-gray-900 break-all">{profile?.email}</p>
                         </div>
-                        <p className="text-gray-700 leading-relaxed bg-gray-50 p-4 rounded-xl rounded-tl-none">{review.comment}</p>
                       </div>
                     </div>
-                  </div>
-                )) : (
-                  <div className="text-center py-12 bg-white border border-gray-100 rounded-2xl">
-                    <Star className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-500 font-medium">No reviews yet.</p>
-                  </div>
-                )}
-              </div>
-            </TabsContent>
+                  )}
+                </TabsContent>
 
-            {/* Badges Tab */}
-            <TabsContent value="badges" className="focus:outline-none focus:ring-0">
-              <div className="mb-6 p-6 bg-white border border-gray-100 rounded-2xl shadow-sm">
-                <h3 className="font-semibold text-gray-900 text-lg">Achievements & Badges</h3>
-                <p className="text-sm text-gray-500 mt-1">Recognition for your contributions</p>
+                <TabsContent value="settings" className="mt-0">
+                  <SettingsPanel dispatch={dispatch} loading={authLoading} />
+                </TabsContent>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {badges.map((badge) => (
-                  <div key={badge.id} className="p-8 bg-white rounded-2xl border border-gray-100 text-center hover:shadow-lg transition-all hover:-translate-y-1">
-                    <div className="text-5xl mb-4 bg-gray-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto shadow-inner">{badge.icon}</div>
-                    <h4 className="font-bold text-gray-900 mb-2">{badge.name}</h4>
-                    <p className="text-sm text-gray-500 leading-relaxed">{badge.description}</p>
-                  </div>
-                ))}
-              </div>
-            </TabsContent>
-
-            {/* Settings Tab */}
-            <TabsContent value="settings" className="focus:outline-none focus:ring-0">
-              <SettingsPanel dispatch={dispatch} loading={loading} />
-            </TabsContent>
-          </Tabs>
+            </Tabs>
+          </div>
         </div>
       </div>
 
-      {/* Bottom Navigation - Mobile Only */}
       <div className="lg:hidden">
         <BottomNavigation activeScreen="profile" onNavigate={onNavigate} />
       </div>
@@ -364,146 +269,114 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
   );
 }
 
-// Edit Profile Form Component
 function EditProfileForm({ profileData, onSave, dispatch, userId, loading }: any) {
-  const [bio, setBio] = useState(profileData.bio);
-  const [location, setLocation] = useState(profileData.location === 'Not set' ? '' : profileData.location);
+  const [bio, setBio] = useState(profileData.bio || '');
+  const [location, setLocation] = useState(profileData.location || '');
 
   const handleSave = async () => {
-    const data = { bio, location };
-    await dispatch(updateUserDetails({ id: userId, data }));
-    onSave();
+    try {
+      await dispatch(updateUserDetails({ id: userId, data: { bio, location } }));
+      toast.success("Profile updated successfully");
+      onSave();
+    } catch (err: any) {
+      toast.error("Failed to update profile");
+    }
   };
 
   return (
-    <div className="space-y-6">
-      <div className="p-8 bg-white shadow-sm border border-gray-100 rounded-2xl">
-        <h3 className="font-semibold text-gray-900 mb-6 text-xl">Edit Profile Information</h3>
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="text-sm font-semibold text-gray-700 mb-2 block">Username <span className="text-xs font-normal text-gray-400 ml-1">(Cannot be changed)</span></label>
-              <Input defaultValue={profileData.name} className="h-12 bg-gray-50/80 border-gray-200 text-gray-500 hover:bg-gray-50/80 cursor-not-allowed" disabled />
-            </div>
-            <div>
-              <label className="text-sm font-semibold text-gray-700 mb-2 block">Email address <span className="text-xs font-normal text-gray-400 ml-1">(Cannot be changed)</span></label>
-              <Input defaultValue={profileData.email} className="h-12 bg-gray-50/80 border-gray-200 text-gray-500 hover:bg-gray-50/80 cursor-not-allowed" disabled />
-            </div>
-          </div>
-          <div>
-            <label className="text-sm font-semibold text-gray-700 mb-2 block">Location</label>
-            <Input value={location} onChange={(e) => setLocation(e.target.value)} className="h-12 focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20 transition-all shadow-sm" placeholder="e.g. San Francisco, CA" />
-          </div>
-          <div>
-            <label className="text-sm font-semibold text-gray-700 mb-2 block">Bio</label>
-            <Textarea value={bio} onChange={(e) => setBio(e.target.value)} className="min-h-32 resize-y focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20 transition-all p-4 text-base shadow-sm" placeholder="Tell the community about your expertise and what you'd like to learn..." />
-          </div>
+    <div className="space-y-6 max-w-2xl">
+      <div className="grid grid-cols-1 gap-6">
+        <div>
+          <label className="text-sm font-bold text-gray-700 mb-2 block">Username (Locked)</label>
+          <Input value={profileData.username} disabled className="h-12 bg-gray-50 border-gray-200 text-gray-400" />
         </div>
-        <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-gray-100">
-          <Button variant="outline" onClick={onSave} className="h-12 px-6 rounded-xl font-semibold hover:bg-gray-50 transition-colors" disabled={loading}>
-            <X className="w-5 h-5 mr-1" /> Cancel
-          </Button>
-          <Button onClick={handleSave} className="h-12 px-8 rounded-xl font-semibold bg-gradient-to-r from-[#2563eb] to-[#1d4ed8] hover:from-[#1d4ed8] hover:to-[#1e40af] text-white shadow-md shadow-blue-500/20 transition-all active:scale-[0.98]" disabled={loading}>
-            {loading ? (
-              <span className="flex items-center"><svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Saving...</span>
-            ) : (
-              <>
-                <Save className="w-5 h-5 mr-2" />
-                Save Changes
-              </>
-            )}
-          </Button>
+        <div>
+          <label className="text-sm font-bold text-gray-700 mb-2 block">Location</label>
+          <Input
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            placeholder="e.g. New York, USA"
+            className="h-12 focus:ring-blue-500 border-gray-200"
+          />
         </div>
+        <div>
+          <label className="text-sm font-bold text-gray-700 mb-2 block">About Bio</label>
+          <Textarea
+            value={bio}
+            onChange={(e) => setBio(e.target.value)}
+            placeholder="Tell the community about yourself..."
+            className="min-h-32 focus:ring-blue-500 border-gray-200"
+          />
+        </div>
+      </div>
+      <div className="flex gap-3 pt-6">
+        <Button onClick={handleSave} disabled={loading} className="px-8 h-12 rounded-xl bg-blue-600 hover:bg-blue-700">
+          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-4 h-4 mr-2" /> Save Changes</>}
+        </Button>
       </div>
     </div>
   );
 }
 
-// Settings Panel Component
 function SettingsPanel({ dispatch, loading }: any) {
   const [showPasswordChange, setShowPasswordChange] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirmation, setPasswordConfirmation] = useState('');
-  const [pwdMsg, setPwdMsg] = useState('');
 
   const handleChangePassword = async () => {
-    setPwdMsg('');
     if (!currentPassword || !password || !passwordConfirmation) {
-      setPwdMsg("Please fill in all fields");
+      toast.error("Please fill in all password fields");
       return;
     }
     if (password !== passwordConfirmation) {
-      setPwdMsg("New passwords do not match"); return;
+      toast.error("Passwords do not match");
+      return;
     }
 
-    const data = { currentPassword, password, passwordConfirmation };
-    const res = await dispatch(changeUserPassword(data));
+    const res = await dispatch(changeUserPassword({ currentPassword, password, passwordConfirmation }));
     if (changeUserPassword.fulfilled.match(res)) {
-      setPwdMsg("Success! Password changed.");
+      toast.success("Password updated successfully");
       setCurrentPassword(''); setPassword(''); setPasswordConfirmation('');
-      setTimeout(() => {
-        setShowPasswordChange(false);
-        setPwdMsg('');
-      }, 2500);
+      setShowPasswordChange(false);
     } else {
-      setPwdMsg(typeof res.payload === 'string' ? res.payload : "Failed to change password. Ensure current password is correct.");
+      toast.error("Failed to update password. Check your current password.");
     }
   };
 
   return (
-    <div className="space-y-6">
-      {/* Privacy */}
-      <div className="p-8 bg-white border border-gray-100 shadow-sm rounded-2xl">
-        <h3 className="font-semibold text-gray-900 mb-6 flex items-center gap-3 text-lg">
-          <div className="p-2 bg-blue-50 text-[#2563eb] rounded-lg">
-            <Shield className="w-5 h-5" />
-          </div>
-          Privacy & Security
+    <div className="space-y-8 max-w-2xl">
+      <div>
+        <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <Shield className="w-5 h-5 text-blue-600" />
+          Account Security
         </h3>
-
-        <div className="space-y-3">
-          <button
-            onClick={() => setShowPasswordChange(!showPasswordChange)}
-            className={`w-full flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-all border ${showPasswordChange ? 'border-[#2563eb]/20 bg-blue-50/30' : 'border-gray-100'}`}
-          >
-            <div className="flex items-center gap-4">
-              <Lock className={`w-5 h-5 ${showPasswordChange ? 'text-[#2563eb]' : 'text-gray-500'}`} />
-              <span className={`font-semibold ${showPasswordChange ? 'text-[#2563eb]' : 'text-gray-900'}`}>Change Password</span>
+        <button
+          onClick={() => setShowPasswordChange(!showPasswordChange)}
+          className="w-full flex items-center justify-between p-5 bg-gray-50 rounded-2xl hover:bg-blue-50 transition-all border border-gray-100 hover:border-blue-200 group"
+        >
+          <div className="flex items-center gap-4">
+            <div className="p-2 bg-white rounded-lg shadow-sm">
+              <Lock className="w-5 h-5 text-gray-600 group-hover:text-blue-600" />
             </div>
-            <span className={`text-gray-400 font-bold transition-transform duration-300 ${showPasswordChange ? 'rotate-90 text-[#2563eb]' : ''}`}>›</span>
-          </button>
-
-          <div className={`overflow-hidden transition-all duration-300 ${showPasswordChange ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
-            <div className="p-6 bg-white border border-blue-100 shadow-sm rounded-xl mt-3 mb-5">
-              <h4 className="font-medium text-gray-900 mb-4">Create a new secure password</h4>
-              <div className="space-y-5">
-                <div className="mb-2">
-                  <Input type="password" placeholder="Current Password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} className="h-12 focus:border-[#2563eb] transition-colors" />
-                </div>
-                <div className="mb-2">
-                  <Input type="password" placeholder="New Password" value={password} onChange={e => setPassword(e.target.value)} className="h-12 focus:border-[#2563eb] transition-colors" />
-                </div>
-                <div className="mb-2">
-                  <Input type="password" placeholder="Confirm New Password" value={passwordConfirmation} onChange={e => setPasswordConfirmation(e.target.value)} className="h-12 focus:border-[#2563eb] transition-colors" />
-                </div>
-              </div>
-
-              {pwdMsg && (
-                <div className={`mt-5 p-4 rounded-xl flex items-start gap-3 ${pwdMsg.includes('Success') ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'}`}>
-                  {pwdMsg.includes('Success') ? <CheckCircle className="w-5 h-5 shrink-0 mt-0.5" /> : <Shield className="w-5 h-5 shrink-0 mt-0.5" />}
-                  <p className="text-sm font-medium">{pwdMsg}</p>
-                </div>
-              )}
-
-              <div className="mt-6">
-                <Button onClick={handleChangePassword} disabled={loading} className="w-full h-12 rounded-xl font-bold bg-gradient-to-r from-[#2563eb] to-[#1d4ed8] hover:from-[#1d4ed8] hover:to-[#1e40af] shadow-md shadow-blue-500/20 text-white transition-all active:scale-[0.98]">
-                  {loading ? 'Processing...' : 'Update Password'}
-                </Button>
-              </div>
+            <div className="text-left">
+              <p className="font-bold text-gray-900">Change Password</p>
+              <p className="text-xs text-gray-500">Update your security credentials</p>
             </div>
           </div>
-        </div>
+          <span className={`text-xl text-gray-300 transition-transform ${showPasswordChange ? 'rotate-90' : ''}`}>›</span>
+        </button>
+
+        {showPasswordChange && (
+          <div className="mt-4 p-6 bg-white border border-blue-100 rounded-2xl space-y-4 shadow-inner">
+            <Input type="password" placeholder="Current Password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} className="h-12" />
+            <Input type="password" placeholder="New Password" value={password} onChange={e => setPassword(e.target.value)} className="h-12" />
+            <Input type="password" placeholder="Confirm New Password" value={passwordConfirmation} onChange={e => setPasswordConfirmation(e.target.value)} className="h-12" />
+            <Button onClick={handleChangePassword} disabled={loading} className="w-full h-12 rounded-xl bg-blue-600">
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Update Password"}
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

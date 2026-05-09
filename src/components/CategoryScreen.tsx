@@ -26,7 +26,6 @@ export default function CategoryScreen({ onNavigate }: CategoryScreenProps) {
             setLoading(true);
             setError(null);
             const response = await apiService.getCategories();
-            // Handling the data object wrapper from Strapi
             setCategories(response?.data || []);
         } catch (err: any) {
             setError(err || 'Failed to fetch categories');

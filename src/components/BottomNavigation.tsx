@@ -1,6 +1,8 @@
 import React from 'react';
-import { Home, Search, Briefcase, User, MessageSquare } from 'lucide-react';
+import { Home, Search, Briefcase, User } from 'lucide-react';
 import { Screen } from '../App';
+import { useSelector } from 'react-redux';
+import { RootState } from '../store';
 
 interface BottomNavigationProps {
   activeScreen: Screen;
@@ -8,13 +10,26 @@ interface BottomNavigationProps {
 }
 
 export default function BottomNavigation({ activeScreen, onNavigate }: BottomNavigationProps) {
-  const navItems = [
-    { id: 'dashboard' as Screen, icon: Home, label: 'Home' },
-    { id: 'my-skills' as Screen, icon: Briefcase, label: 'Skills' },
-    { id: 'discovery' as Screen, icon: Search, label: 'Search' },
-    { id: 'messages' as Screen, icon: MessageSquare, label: 'Messages' },
-    { id: 'profile' as Screen, icon: User, label: 'Profile' },
-  ];
+  const { user } = useSelector((state: RootState) => state.auth);
+  const isAdmin = user?.role?.name?.toLowerCase() === 'admin' || user?.role?.type?.toLowerCase() === 'admin' || user?.role === 'admin';
+
+  let navItems: any[] = [];
+
+  if (isAdmin) {
+    navItems = [
+      { id: 'dashboard' as Screen, icon: Home, label: 'Home' },
+      { id: 'users' as Screen, icon: User, label: 'Users' },
+      { id: 'skills-approval' as Screen, icon: Briefcase, label: 'Approval' },
+      { id: 'profile' as Screen, icon: User, label: 'Profile' },
+    ];
+  } else {
+    navItems = [
+      { id: 'dashboard' as Screen, icon: Home, label: 'Home' },
+      { id: 'my-skills' as Screen, icon: Briefcase, label: 'Skills' },
+      { id: 'discovery' as Screen, icon: Search, label: 'Search' },
+      { id: 'profile' as Screen, icon: User, label: 'Profile' },
+    ];
+  }
 
   return (
     <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 pb-6 pt-2 safe-area-inset-bottom">

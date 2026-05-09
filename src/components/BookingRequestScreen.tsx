@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
-import { ArrowLeft, Calendar, Clock, Sparkles } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, Calendar, Clock, Sparkles, Loader2, CheckCircle2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Screen, SkillData } from '../App';
+import { useSelector } from 'react-redux';
+import { apiService } from '../services/apiService';
+import { RootState } from '../store';
 
 interface BookingRequestScreenProps {
   skill: SkillData;
@@ -14,15 +17,33 @@ export default function BookingRequestScreen({ skill, onNavigate }: BookingReque
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [duration, setDuration] = useState('1h');
-  const [offerSkill, setOfferSkill] = useState('');
+  const [offerSkillId, setOfferSkillId] = useState(''); // Store ID instead of title
   const [message, setMessage] = useState('');
 
-  const mySkills = [
-    { id: '1', name: 'Python Programming', credits: 2 },
-    { id: '2', name: 'Graphic Design', credits: 1.5 },
-    { id: '3', name: 'Content Writing', credits: 1 },
-    { id: '4', name: 'Marketing Strategy', credits: 2 },
-  ];
+  const [mySkills, setMySkills] = useState<any[]>([]);
+  const [loadingSkills, setLoadingSkills] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user } = useSelector((state: RootState) => state.auth);
+
+  useEffect(() => {
+    const fetchMySkills = async () => {
+      if (!user?.id) return;
+      try {
+        setLoadingSkills(true);
+        const res = await apiService.getMySkills(user.id);
+        if (res?.data) {
+          // Only show approved skills for exchange
+          const approvedSkills = res.data.filter((s: any) => s.approval_status === 'approved');
+          setMySkills(approvedSkills);
+        }
+      } catch (err) {
+        console.error("Failed to fetch my skills:", err);
+      } finally {
+        setLoadingSkills(false);
+      }
+    };
+    fetchMySkills();
+  }, [user?.id]);
 
   const durations = [
     { value: '30m', label: '30 minutes' },
@@ -30,9 +51,28 @@ export default function BookingRequestScreen({ skill, onNavigate }: BookingReque
     { value: '2h', label: '2 hours' },
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onNavigate('success');
+    if (!user?.id || !skill?.id || !offerSkillId || !selectedDate) return;
+
+    try {
+      setIsSubmitting(true);
+      const payload = {
+        message: message || "Skill exchange request",
+        scheduled_date: selectedDate,
+        requester: user.id,
+        provider: skill.user?.id || skill.userId, // Assuming user.id or userId is available on the skill object
+        offered_skill: parseInt(offerSkillId),
+        requested_skill: skill.id
+      };
+
+      await apiService.createBooking(payload);
+      onNavigate('success');
+    } catch (err: any) {
+      alert(err || "Failed to send request. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -47,46 +87,89 @@ export default function BookingRequestScreen({ skill, onNavigate }: BookingReque
             <ArrowLeft className="w-5 h-5 text-gray-900" />
           </button>
           <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Request Exchange</h1>
-          <p className="text-sm text-gray-500 mt-1">Exchange skills with {skill.provider.name}</p>
+          <p className="text-sm text-gray-500 mt-1">Exchange skills with {skill.user?.username || skill.provider?.name || 'Unknown User'}</p>
         </div>
       </div>
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="flex-1 px-6 lg:px-8 xl:px-12 py-6 pb-32">
         <div className="max-w-2xl mx-auto space-y-6">
-          {/* Date & Time */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="date-input" className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                <Calendar className="w-4 h-4" />
-                Select Date
+          {/* Date & Time Selection */}
+          {skill.availability_slots && skill.availability_slots.length > 0 ? (
+            <div className="space-y-3">
+              <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-[#2563eb]" />
+                Select an Available Slot
               </label>
-              <input
-                id="date-input"
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                min={new Date().toISOString().split('T')[0]}
-                className="w-full h-12 px-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#2563eb] focus:border-transparent"
-                required
-              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {skill.availability_slots.map((slot, index) => {
+                  const isSelected = selectedDate === slot.date && selectedTime === slot.start_time;
+                  return (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => {
+                        setSelectedDate(slot.date);
+                        setSelectedTime(slot.start_time);
+                      }}
+                      className={`p-4 rounded-2xl border-2 transition-all text-left relative overflow-hidden ${
+                        isSelected
+                          ? 'border-[#2563eb] bg-blue-50 ring-4 ring-blue-500/5'
+                          : 'border-gray-100 bg-gray-50 hover:border-gray-200 hover:bg-white'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1 relative z-10">
+                        <span className={`font-bold ${isSelected ? 'text-[#2563eb]' : 'text-gray-900'}`}>
+                          {new Date(slot.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </span>
+                        {isSelected && <CheckCircle2 className="w-4 h-4 text-[#2563eb]" />}
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-gray-500 relative z-10">
+                        <Clock className="w-3.5 h-3.5" />
+                        {slot.start_time.substring(0, 5)} - {slot.end_time.substring(0, 5)}
+                      </div>
+                      {isSelected && (
+                        <div className="absolute top-0 right-0 w-16 h-16 bg-blue-100/50 rounded-full -mr-8 -mt-8"></div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="date-input" className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                  <Calendar className="w-4 h-4" />
+                  Select Date
+                </label>
+                <input
+                  id="date-input"
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                  className="w-full h-12 px-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#2563eb] focus:border-transparent"
+                  required
+                />
+              </div>
 
-            <div>
-              <label htmlFor="time-input" className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                <Clock className="w-4 h-4" />
-                Select Time
-              </label>
-              <input
-                id="time-input"
-                type="time"
-                value={selectedTime}
-                onChange={(e) => setSelectedTime(e.target.value)}
-                className="w-full h-12 px-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#2563eb] focus:border-transparent"
-                required
-              />
+              <div>
+                <label htmlFor="time-input" className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  Select Time
+                </label>
+                <input
+                  id="time-input"
+                  type="time"
+                  value={selectedTime}
+                  onChange={(e) => setSelectedTime(e.target.value)}
+                  className="w-full h-12 px-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#2563eb] focus:border-transparent"
+                  required
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Duration */}
           <div>
@@ -121,17 +204,28 @@ export default function BookingRequestScreen({ skill, onNavigate }: BookingReque
               This is a barter exchange. Select a skill you'll teach in return.
             </p>
             <select
-              value={offerSkill}
-              onChange={(e) => setOfferSkill(e.target.value)}
-              className="w-full h-12 px-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-900"
+              value={offerSkillId}
+              onChange={(e) => setOfferSkillId(e.target.value)}
+              className="w-full h-12 px-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#2563eb] focus:border-transparent"
               required
+              disabled={loadingSkills}
             >
-              <option value="">Choose a skill to trade...</option>
-              {mySkills.map((skill) => (
-                <option key={skill.id} value={skill.name}>
-                  {skill.name} ({skill.credits} hrs)
-                </option>
-              ))}
+              {loadingSkills ? (
+                <option>Loading your skills...</option>
+              ) : (
+                <>
+                  <option value="">Choose a skill to trade...</option>
+                  {mySkills.length > 0 ? (
+                    mySkills.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.title} ({s.skill_level || 'All levels'})
+                      </option>
+                    ))
+                  ) : (
+                    <option disabled>No approved skills found. Please add and get approval first.</option>
+                  )}
+                </>
+              )}
             </select>
           </div>
 
@@ -149,7 +243,7 @@ export default function BookingRequestScreen({ skill, onNavigate }: BookingReque
           </div>
 
           {/* Summary Box */}
-          {offerSkill && selectedDate && (
+          {offerSkillId && selectedDate && (
             <div className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl">
               <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-[#f97316]" />
@@ -157,7 +251,7 @@ export default function BookingRequestScreen({ skill, onNavigate }: BookingReque
               </h4>
               <div className="space-y-2 text-sm text-gray-700">
                 <p>
-                  <span className="font-medium">Trading:</span> {offerSkill}
+                  <span className="font-medium">Trading:</span> {mySkills.find(s => s.id.toString() === offerSkillId.toString())?.title}
                 </p>
                 <p>
                   <span className="font-medium">For:</span> {skill.title}
@@ -192,9 +286,16 @@ export default function BookingRequestScreen({ skill, onNavigate }: BookingReque
           <Button
             onClick={handleSubmit}
             className="w-full h-12 bg-[#2563eb] hover:bg-[#1d4ed8] text-white rounded-xl"
-            disabled={!selectedDate || !selectedTime || !offerSkill}
+            disabled={!selectedDate || !selectedTime || !offerSkillId || isSubmitting}
           >
-            Send Booking Request
+            {isSubmitting ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Sending Request...
+              </span>
+            ) : (
+              'Send Booking Request'
+            )}
           </Button>
         </div>
       </div>

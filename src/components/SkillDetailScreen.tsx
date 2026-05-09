@@ -9,45 +9,7 @@ interface SkillDetailScreenProps {
   onNavigate: (screen: Screen, data?: any) => void;
 }
 
-interface Review {
-  id: string;
-  author: string;
-  avatar: string;
-  rating: number;
-  date: string;
-  comment: string;
-}
-
 export default function SkillDetailScreen({ skill, onNavigate }: SkillDetailScreenProps) {
-  const reviews: Review[] = [
-    {
-      id: '1',
-      author: 'Alex Thompson',
-      avatar: 'AT',
-      rating: 5,
-      date: '2 weeks ago',
-      comment: 'Excellent teaching style! Very patient and knowledgeable. Highly recommend!',
-    },
-    {
-      id: '2',
-      author: 'Jennifer Park',
-      avatar: 'JP',
-      rating: 4,
-      date: '1 month ago',
-      comment: 'Great experience overall. Learned a lot in just one session.',
-    },
-  ];
-
-  const renderStars = (rating: number) => {
-    return Array.from({ length: 5 }).map((_, i) => (
-      <Star
-        key={i}
-        className={`w-4 h-4 ${i < rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
-          }`}
-      />
-    ));
-  };
-
   return (
     <div className="h-full flex flex-col bg-white overflow-y-auto">
       {/* Hero Image */}
@@ -140,7 +102,7 @@ export default function SkillDetailScreen({ skill, onNavigate }: SkillDetailScre
           </div>
 
           {/* Reviews */}
-          <div className="py-6">
+          {/* <div className="py-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg lg:text-xl font-semibold text-gray-900">Reviews</h3>
               <div className="flex items-center gap-2">
@@ -173,7 +135,7 @@ export default function SkillDetailScreen({ skill, onNavigate }: SkillDetailScre
                 </div>
               ))}
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
 

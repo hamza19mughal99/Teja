@@ -17,20 +17,27 @@ import StaticPageScreen from './components/StaticPageScreen';
 import UsersScreen from './components/UsersScreen';
 import CategoryScreen from './components/CategoryScreen';
 import SkillsApprovalScreen from './components/SkillsApprovalScreen';
+import ReportedUsersScreen from './components/ReportedUsersScreen';
+import BookingsScreen from './components/BookingsScreen';
+import { Toaster } from './components/ui/sonner';
 import { Provider } from "react-redux";
 import { store } from './store';
 import axios from "axios";
 
-export type Screen = 'login' | 'register' | 'forgot-password' | 'reset-password' | 'dashboard' | 'discovery' | 'skill-detail' | 'booking' | 'success' | 'my-skills' | 'profile' | 'messages' | 'notifications' | 'privacy' | 'terms' | 'about' | 'users' | 'category' | 'skills-approval';
+export type Screen = 'login' | 'register' | 'forgot-password' | 'reset-password' | 'dashboard' | 'discovery' | 'skill-detail' | 'booking' | 'success' | 'my-skills' | 'profile' | 'messages' | 'notifications' | 'privacy' | 'terms' | 'about' | 'users' | 'category' | 'skills-approval' | 'reported-users' | 'bookings';
 
 export interface SkillData {
   id: string;
   title: string;
-  category: string;
+  category: any;
   provider: {
     name: string;
     avatar: string;
     verified: boolean;
+  };
+  user?: {
+    id: number;
+    username: string;
   };
   rating: number;
   reviewCount: number;
@@ -40,6 +47,11 @@ export interface SkillData {
   language: string;
   description: string;
   availability: string;
+  availability_slots?: Array<{
+    date: string;
+    start_time: string;
+    end_time: string;
+  }>;
   image: string;
 }
 
@@ -118,6 +130,12 @@ function App() {
               {currentScreen === 'skills-approval' && (
                 <SkillsApprovalScreen onNavigate={handleNavigate} />
               )}
+              {currentScreen === 'reported-users' && (
+                <ReportedUsersScreen onNavigate={handleNavigate} />
+              )}
+              {currentScreen === 'bookings' && (
+                <BookingsScreen onNavigate={handleNavigate} />
+              )}
               {currentScreen === 'skill-detail' && selectedSkill && (
                 <SkillDetailScreen skill={selectedSkill} onNavigate={handleNavigate} />
               )}
@@ -156,7 +174,7 @@ function App() {
                   {!token && currentScreen === 'forgot-password' && (
                     <ForgotPasswordScreen onNavigate={(s) => handleNavigate(s)} />
                   )}
-                  {token && (
+                  {(token || currentScreen === 'reset-password') && (
                     <ResetPasswordScreen onLogin={handleLogin} onNavigate={(s) => handleNavigate(s)} />
                   )}
                 </div>
@@ -164,6 +182,7 @@ function App() {
             )}
           </>
         )}
+        <Toaster position="top-right" richColors />
       </div>
     </Provider>
   );
