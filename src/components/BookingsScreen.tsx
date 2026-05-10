@@ -71,10 +71,7 @@ export default function BookingsScreen({ onNavigate }: BookingsScreenProps) {
                 data.completed_at = new Date().toISOString();
             }
 
-            // Call the API to update the status
             await apiService.updateBooking(bookingId, data);
-
-            // Re-fetch bookings to get the latest state from the server
             await fetchBookings();
             toast.success(`Booking ${status}ed successfully`);
         } catch (err: any) {
