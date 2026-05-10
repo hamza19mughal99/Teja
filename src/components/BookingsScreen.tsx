@@ -23,7 +23,7 @@ const statusColors: Record<string, string> = {
 export default function BookingsScreen({ onNavigate }: BookingsScreenProps) {
     const [bookings, setBookings] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [actionLoading, setActionLoading] = useState<number | null>(null);
+    const [actionLoading, setActionLoading] = useState<any>(null);
     const [reportModal, setReportModal] = useState<{ isOpen: boolean; booking: any | null; reason: string }>({
         isOpen: false,
         booking: null,
@@ -38,11 +38,15 @@ export default function BookingsScreen({ onNavigate }: BookingsScreenProps) {
             setLoading(true);
             const res = await apiService.getBookings();
             if (res?.data) {
-                // Filter bookings where user is either requester or provider
-                const myBookings = res.data.filter((b: any) =>
-                    b.requester?.id === user?.id || b.provider?.id === user?.id
-                );
-                // Sort by creation date descending
+                const myBookings = res.data.filter((b: any) => {
+                    const isRequester = b.requester?.id === user?.id;
+                    const isProvider = b.provider?.id === user?.id;
+
+                    if (isRequester) return true;
+                    if (isProvider && b.booking_status !== 'cancel') return true;
+
+                    return false;
+                });
                 myBookings.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
                 setBookings(myBookings);
             }
@@ -59,13 +63,16 @@ export default function BookingsScreen({ onNavigate }: BookingsScreenProps) {
         }
     }, [user?.id]);
 
-    const handleUpdateStatus = async (bookingId: number, status: string) => {
+    const handleUpdateStatus = async (bookingId: any, status: string) => {
         try {
             setActionLoading(bookingId);
             const data: any = { booking_status: status };
             if (status === 'complete') {
                 data.completed_at = new Date().toISOString();
             }
+
+            // Call the API to update the status
+            await apiService.updateBooking(bookingId, data);
 
             // Re-fetch bookings to get the latest state from the server
             await fetchBookings();

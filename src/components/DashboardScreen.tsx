@@ -157,7 +157,7 @@ export default function DashboardScreen({ onNavigate, user: initialUser }: Dashb
                         <ArrowRight className="w-4 h-4" />
                       </button>
                       <button
-                        className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-blue-600 hover:bg-blue-700 rounded-full font-semibold transition-all shadow-md"
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white hover:bg-blue-700 rounded-full font-semibold transition-all shadow-md"
                         onClick={() => onNavigate('my-skills', { openAddModal: true })}
                       >
                         <Plus className="w-4 h-4" />
